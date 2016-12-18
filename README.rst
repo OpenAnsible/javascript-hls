@@ -13,6 +13,14 @@ JavaScript HTTP Live Streaming
 
 
 
+消歧义
+-------
+
+*	本项目名字 `HTTP Live Streaming` 并非是指对 `Apple Http Live streaming <https://developer.apple.com/streaming/>`_ 的单一实现。实际上，本项目还涵盖了 `XSPF <http://www.xspf.org>`_ 以及 `MPD(Media Presentation Description) <http://mpeg.chiariglione.org/standards/mpeg-dash/media-presentation-description-and-segment-formats>`_
+
+*	`ISO MPEG-DASH <http://dashif.org>`_ 中的 `MPD(Media Presentation Description) <http://mpeg.chiariglione.org/standards/mpeg-dash/media-presentation-description-and-segment-formats>`_ 和 `MPD(Music Player Daemon) <https://www.musicpd.org/>`_ 是两个不同的东西。
+
+
 参考
 ------
 
