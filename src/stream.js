@@ -29,7 +29,6 @@ function range_request(url, range, callback){
 
 
 /**
-
     var video = document.querySelector('video');
     var mediaSource = new MediaSource();
     video.src = window.URL.createObjectURL(mediaSource); // blob URL pointing to the MediaSource.
@@ -68,11 +67,9 @@ function range_request(url, range, callback){
     mediaSource.addEventListener('webkitsourceended', function(e) {
         console.log('mediaSource readyState: ' + this.readyState);
     }, false);
-
-    
 **/
 
-function slice_blob_file(url, callback){
+function media_request(url, callback){
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.responseType = 'blob';
