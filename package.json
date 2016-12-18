@@ -1,0 +1,33 @@
+{
+  "name": "hls",
+  "version": "0.1.0",
+  "description": "",
+  "keywords": ["hls"],
+  "author": "",
+  "homepage": "",
+  "repository": {"type": "git","url": "git@github.com:OpenAnsible/javascript-hls.git"},
+  "maintainers": [
+
+  ],
+  "contributors": [
+
+  ],
+  "engines": {"node": ">=0.1"},
+  "main": "./lib/index.js",
+  "scripts" : {
+
+  },
+  "devDependencies": {
+    "webpack": "1.14.0",
+    "babel-preset-latest": "6.16.0",
+    "babel-preset-react": "6.11.1",
+    "babel-core": "6.14.0",
+    "babel-loader": "6.2.9",
+    "json-loader" : "0.5.4",
+    "source-map-loader": "^0.1.5"
+  },
+  "dependencies": {
+    
+  },
+  "license": "GPL"
+}
