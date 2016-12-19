@@ -9,8 +9,17 @@ JavaScript HTTP Live Streaming
 介绍
 -----
 
-基于 `HTML5` 新增特性 `Media Source Extensions <https://w3c.github.io/media-source/>`_ 实现的音视频媒体播放器。
+基于 `HTML5` 新增特性 `MSE(Media Source Extensions) <https://w3c.github.io/media-source/>`_ 实现的音视频媒体播放器。
 
+
+`MSE` 目前支持的流格式:
+
+1.	`MSE-FORMAT-ISOBMFF <https://www.w3.org/TR/mse-byte-stream-format-isobmff/>`_ ,  ISO BMFF Byte Stream Format
+2.	`MSE-FORMAT-MP2T <https://www.w3.org/TR/mse-byte-stream-format-mp2t/>`_ ,  MPEG-2 Transport Streams Byte Stream Format
+3.	`MSE-FORMAT-WEBM <https://www.w3.org/TR/mse-byte-stream-format-webm/>`_ , WebM Byte Stream Format
+4.	`MSE-FORMAT-MPEG-AUDIO <https://www.w3.org/TR/mse-byte-stream-format-mpeg-audio/>`_ , MPEG Audio Byte Stream Format
+
+`MSE-REGISTRY <https://www.w3.org/TR/mse-byte-stream-format-registry/>`, Media Source Extensions Byte Stream Format Registry
 
 
 消歧义

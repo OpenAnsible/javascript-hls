@@ -2,6 +2,9 @@
 // Media Presentation Description
 
 /**
+https://en.wikipedia.org/wiki/Dynamic_Adaptive_Streaming_over_HTTP
+http://www.bbc.co.uk/rd/blog/2013/09/mpeg-dash-test-streams
+http://rdmedia.bbc.co.uk/
 http://rdmedia.bbc.co.uk/dash/ondemand/bbb/2/client_manifest-common_init.mpd
 
 <?xml version="1.0" encoding="UTF-8"?>
