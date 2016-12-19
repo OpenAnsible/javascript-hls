@@ -19,7 +19,47 @@ JavaScript HTTP Live Streaming
 3.	`MSE-FORMAT-WEBM <https://www.w3.org/TR/mse-byte-stream-format-webm/>`_ , WebM Byte Stream Format
 4.	`MSE-FORMAT-MPEG-AUDIO <https://www.w3.org/TR/mse-byte-stream-format-mpeg-audio/>`_ , MPEG Audio Byte Stream Format
 
-`MSE-REGISTRY <https://www.w3.org/TR/mse-byte-stream-format-registry/>`, Media Source Extensions Byte Stream Format Registry
+
+`Media Source Extensions Byte Stream Format Registry <https://www.w3.org/TR/mse-byte-stream-format-registry/>`_ :
+
+.. code:: javascript
+	
+	// ISO BMFF Byte Stream Format
+	window.MediaSource.isTypeSupported('video/mp4');
+	window.MediaSource.isTypeSupported('audio/mp4');
+	window.MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"'); // AVC_BASELINE
+	window.MediaSource.isTypeSupported('video/mp4; codecs="avc1.4D401E, mp4a.40.2"'); // AVC_MAIN
+	window.MediaSource.isTypeSupported('video/mp4; codecs="avc1.64001E, mp4a.40.2"'); // AVC_HIGH
+	// WARN: mp4 with no fragments, should rebuild mp4 box 
+	window.MediaSource.isTypeSupported('video/mp4; codecs="avc1.640028"');
+	window.MediaSource.isTypeSupported('video/mp4; codecs="mp4v.20.9"');
+	window.MediaSource.isTypeSupported('audio/mp4; codecs="mp4a.40.2"');
+	window.MediaSource.isTypeSupported('video/3gpp2; codecs="sevc, s263"');
+
+	// WebM Byte Stream Format
+	window.MediaSource.isTypeSupported('video/webp');
+	window.MediaSource.isTypeSupported('audio/webp');
+	window.MediaSource.isTypeSupported('video/webm; codecs="vp8, vorbis"');
+	window.MediaSource.isTypeSupported('video/webm; codecs="vp8, opus"');
+	window.MediaSource.isTypeSupported('video/webm; codecs="vp9, vorbis"');
+	window.MediaSource.isTypeSupported('video/webm; codecs="vp9, opus"');
+
+	window.MediaSource.isTypeSupported('video/webm; codecs="vorbis"');
+	window.MediaSource.isTypeSupported('audio/webm; codecs="vorbis"');
+	window.MediaSource.isTypeSupported('video/webm; codecs="opus"');
+	window.MediaSource.isTypeSupported('audio/webm; codecs="opus"');
+
+	// MPEG-2 Transport Streams Byte Stream Format
+	// window.MediaSource.isTypeSupported('video/mp2t');
+	// window.MediaSource.isTypeSupported('audio/mp2t');
+	window.MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+
+	// MPEG Audio Byte Stream Format 
+	window.MediaSource.isTypeSupported('audio/mpeg');
+	window.MediaSource.isTypeSupported('audio/aac');
+
+	// MP3 (chrome)
+	window.MediaSource.isTypeSupported('audio/mp4; codecs="mp3"');
 
 
 消歧义
