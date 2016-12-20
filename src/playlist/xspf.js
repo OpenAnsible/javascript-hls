@@ -390,6 +390,6 @@ function test(){
     console.log(xspf_doc);
 }
 
-test();
+// test();
 
 export default {parse, stringify, fromJSON}

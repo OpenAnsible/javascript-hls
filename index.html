@@ -13,13 +13,28 @@
 
         <link rel="stylesheet" type="text/css"
             href="/assets/css/main.css" /> -->
+        <style type="text/css">
+            section {
+                float: left;
+                margin-left: 12px;
+            }
+        </style>
     </head>
 
     <body>
-    	<video id="video">
-    		
+        <h1>Media Source Extensions API Test</h1>
+        <section>
+            <h2>WebM </h2>
+            <video id="video/webm" controls autoplay width="320" height="240"></video>
+            <pre id="log"></pre>
+        </section>
 
-    	</video>
+        <section>
+            <h2>MPEG-4 </h2>
+            <video id="video/mp4" controls autoplay width="320" height="240"></video>
+            <pre id="log"></pre>
+        </section>
+
     </body>
 
 

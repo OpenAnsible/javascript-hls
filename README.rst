@@ -24,6 +24,9 @@ JavaScript HTTP Live Streaming
 
 .. code:: javascript
 	
+	// https://cconcolato.github.io/media-mime-support/
+	// https://wiki.whatwg.org/wiki/Video_type_parameters#Video_Codecs_2
+
 	// ISO BMFF Byte Stream Format
 	window.MediaSource.isTypeSupported('video/mp4');
 	window.MediaSource.isTypeSupported('audio/mp4');
@@ -37,8 +40,8 @@ JavaScript HTTP Live Streaming
 	window.MediaSource.isTypeSupported('video/3gpp2; codecs="sevc, s263"');
 
 	// WebM Byte Stream Format
-	window.MediaSource.isTypeSupported('video/webp');
-	window.MediaSource.isTypeSupported('audio/webp');
+	window.MediaSource.isTypeSupported('video/webm');
+	window.MediaSource.isTypeSupported('audio/webm');
 	window.MediaSource.isTypeSupported('video/webm; codecs="vp8, vorbis"');
 	window.MediaSource.isTypeSupported('video/webm; codecs="vp8, opus"');
 	window.MediaSource.isTypeSupported('video/webm; codecs="vp9, vorbis"');
