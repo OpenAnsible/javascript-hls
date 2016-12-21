@@ -52,9 +52,6 @@ PlayList:
 import PlayList from './playlist/index.js';
 import Http from './net/http.js';
 
-// window.XML_STRING = '<?xml version="1.0" encoding="UTF-8"?><playlist version="1" xmlns="http://xspf.org/ns/0/"><title>Atm.Fm</title><info>http://atmfm.ru/</info><trackList><track><location>http://5.187.7.114:8000/pt-1</location></track></trackList></playlist>';
-
-
 const SupportCodecs = [
     // MPEG-4 , MPEG-TS , MPEG-H (HEVC) , 
     'video/mp4;codecs="avc1.42E01E,mp4a.40.2"', // AVC_BASELINE
@@ -97,6 +94,8 @@ load binary data:
     play("http://www.example.com/video.ts")
     play("http://www.example.com/video.flv")
 
+http://devimages.apple.com/iphone/samples/bipbop/gear3/prog_index.m3u8
+http://solutions.brightcove.com/jwhisenant/hls/apple/bipbop/bipbopall.m3u8
 **/
 
 function play(videoDOM, url, codecs){
@@ -109,17 +108,18 @@ function play(videoDOM, url, codecs){
 
     var onFetchDone = function (httpResponse){
         endOfStream = true;
-        sourceBuffer.appendBuffer(httpResponse.body);
-        if ( videoDOM.paused ) {
-            videoDOM.play();
+        if ( mediaSource.readyState === 'open' ) {
+            sourceBuffer.appendBuffer(httpResponse.body);
         }
     };
     var onSourceOpen = function (){
         sourceBuffer = mediaSource.addSourceBuffer(codecs);
         sourceBuffer.addEventListener('updateend', function (_) {
-            if ( endOfStream === true ) {
+            if ( endOfStream === true && mediaSource.readyState === 'open' ) {
                 mediaSource.endOfStream();
-                console.log(mediaSource.readyState); // ended
+            }
+            if ( videoDOM.paused ) {
+                videoDOM.play();
             }
         });
 
@@ -139,7 +139,7 @@ function play(videoDOM, url, codecs){
     }, false);
 }
 
-function play_with_fragments(videoDOM, url, codecs){
+function play_with_range_request(videoDOM, url, codecs){
     var mediaSource = new MediaSource();
     var sourceBuffer = null;
     var endOfStream = false;
@@ -155,8 +155,24 @@ function play_with_fragments(videoDOM, url, codecs){
     };
 
     var onFetchDone = function (httpResponse){
-        totalSize = parseInt(httpResponse.headers['content-range'].split("/")[1]);
-        var contentLength = parseInt(httpResponse.headers['content-length']);
+        var contentLength = 0;
+        var header_keys = Object.keys(httpResponse.headers);
+        if ( header_keys.indexOf('content-length') === -1 ) {
+            console.info(httpResponse.headers);
+            window.alert(" Can't find `content-length` header in Http Response.");
+            return;
+        } else {
+            contentLength = parseInt(httpResponse.headers['content-length']);
+        }
+
+        if ( header_keys.indexOf('content-range') === -1 ) {
+            console.info(httpResponse.headers);
+            window.alert("你的服务器不支持 Byte Range Request!");
+            totalSize = contentLength;
+        } else {
+            totalSize = parseInt(httpResponse.headers['content-range'].split("/")[1]);
+        }
+        
         bufferSize = bufferSize + contentLength;
 
         if ( bufferSize === totalSize ){
@@ -170,9 +186,9 @@ function play_with_fragments(videoDOM, url, codecs){
             endOfStream = true;
             console.error("Ooops ...");
         }
-        sourceBuffer.appendBuffer(httpResponse.body);
-        if ( videoDOM.paused ) {
-            videoDOM.play();
+        if ( mediaSource.readyState === 'open' ) {
+            // console.log(mediaSource.readyState);
+            sourceBuffer.appendBuffer(httpResponse.body);
         }
     };
     var download_fragment = function (){
@@ -188,9 +204,13 @@ function play_with_fragments(videoDOM, url, codecs){
     var onSourceOpen = function (){
         sourceBuffer = mediaSource.addSourceBuffer(codecs);
         sourceBuffer.addEventListener('updateend', function (_) {
-            if ( endOfStream === true ) {
-                mediaSource.endOfStream();
+            // mediaSource.readyState = Enum( 'open', 'closed', 'ended' )
+            if ( endOfStream === true && mediaSource.readyState === 'open' ) {
                 // mediaSource.readyState === 'ended'
+                mediaSource.endOfStream();
+            }
+            if ( videoDOM.paused ) {
+                videoDOM.play();
             }
         });
         download_fragment();
@@ -203,8 +223,8 @@ function play_with_fragments(videoDOM, url, codecs){
     }, false);
 }
 
-function main (){
-	window.MediaSource = window.MediaSource || window.WebKitMediaSource;
+function test_single_media (){
+    window.MediaSource = window.MediaSource || window.WebKitMediaSource;
     if (!!!window.MediaSource) {
         window.alert('MediaSource API is not available');
         return false;
@@ -229,15 +249,125 @@ function main (){
         } else {
             var videoDOM = window.document.getElementById(video.mime_type);
             console.info("play "+video.url);
-            play_with_fragments(videoDOM, video.url, video.codecs);
+            play_with_range_request(videoDOM, video.url, video.codecs);
         }
     });
 }
 
-window.PlayList = PlayList;
-window.play = play;
-window.main = main;
 
-window.onload = main;
+function play_with_fragments(videoDOM, playlist, codecs){
+
+    var segments = playlist.segments;
+    var sources  = []; // Vec<MediaSource>
+    var chunks   = []; // Vec<Uint8Buffer>
+    var played = [];
+
+    var endOfStream = false;
+
+    var duration = 0;
+    var idx = 0;
+    var play_idx = 0;
+
+    videoDOM.onended = function (){
+        console.log("video onended");
+        tryNext();
+    };
+    var onsourceopen = function (){
+        // console.log("onSourceOpen ... ", this);
+        let self = this;
+        let sourceBuffer = this.addSourceBuffer(codecs);
+        sourceBuffer.mode = 'segments'; // segments , sequence
+        sourceBuffer.onupdateend = function (){
+            self.endOfStream();
+        };
+        sourceBuffer.appendBuffer(chunks[play_idx]);
+        play_idx += 1;
+        // chunks.forEach(function (chunk, i){
+        //     sourceBuffer.appendBuffer(chunk);
+        // });
+        if ( videoDOM.paused ){
+            videoDOM.play();
+        }
+    };
+    var tryPlay = function (){
+        console.log("try play ... ");
+        let mediaSource = new MediaSource();
+        mediaSource.onsourceopen = onsourceopen.bind(mediaSource);
+        videoDOM.src = window.URL.createObjectURL(mediaSource);
+        // chunks
+    };
+    var tryNext = function (){
+        console.log("try play next ... ");
+        if ( play_idx <= chunks.length ){
+            tryPlay();
+        } else {
+            console.log("play done.");
+        }
+    };
+
+    var download_fragment = function (){
+        console.log("download fragment: ", idx);
+        Http.fetch(segments[idx]["url"], function (state, data){
+                if ( state === 'SUCCESS' ){
+                    chunks.push(data.body);
+                    if ( idx < playlist.segments.length-1 ) {
+                        idx += 1;
+                        download_fragment();
+                    } else {
+                        console.log("segments fetch done.");
+                        tryPlay();
+                    }
+                } else if ( state === 'FAILURE' || state === 'REVOKED' ) {
+                    console.warn("fetch video file fail.");
+                }
+            }, null);
+    };
+    download_fragment();
+}
+
+function test_fragments(){
+    var playlist = {
+        "segments": [
+            {"url": "/assets/video/test.mp4"},
+            {"url": "/assets/video/out001_f.mp4"},
+            {"url": "/assets/video/out002_f.mp4"},
+        ]
+    };
+    var codecs = 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"';
+    window.codecs = codecs;
+
+    window.videoDOM = window.document.getElementById("video/m3u8");
+    play_with_fragments(window.videoDOM, playlist, codecs);
+}
+
+function test_paly_hls(){
+    var url = "/output/master.m3u8"; // "http://127.0.0.1/output/master.m3u8"
+    var baseUrl = PlayList.m3u.getBaseUrl(url);
+    var onParseDone = function (playlist){
+        // segments
+        console.log(playlist);
+        window.videoDOM = window.document.getElementById("video/m3u8");
+        // avc1.64002A avc1.640028
+        // video/mp4;codecs="avc1.64001E,mp4a.40.2"
+        // video/mp4;codecs="avc1.640028,mp4a.40.2"
+        // 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"', // AVC_BASELINE
+        play_with_fragments(window.videoDOM, playlist, 'video/mp4;codecs="avc1.42E01E,mp4a.40.2');
+    };
+    PlayList.m3u.load(url, function (httpResponse){
+        var m3u = PlayList.m3u.arrayBufferToString(httpResponse.body);
+        PlayList.m3u.parse(m3u, baseUrl, onParseDone);
+    });
+}
+
+function test(){
+    test_single_media();
+    test_fragments();
+}
+
+// window.PlayList = PlayList;
+// window.play = play;
+// window.main = main;
+
+window.onload = test;
 
 export default {play};
