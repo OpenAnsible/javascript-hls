@@ -67,7 +67,6 @@ function urljoin(a, b){
 }
 
 function load(url, callback){
-    // var url = new window.URL(url);
     var onFetch = function (state, data){
         if ( state === Http.STATE.SUCCESS ) {
             callback(data);
@@ -75,7 +74,7 @@ function load(url, callback){
             console.log("m3u8 playlist fetch fail.");
         }
     };
-    Http.fetch(url, onFetch, null);
+    Http.fetch(url, onFetch, {"responseType": "text"});
 }
 /**
     {
@@ -216,8 +215,7 @@ function parse(string, baseUrl, callback){
             // Download Sub PlayList
             jobs += 1;
             load(url, function (httpResponse){
-                var _m3u = arrayBufferToString(httpResponse.body);
-                parse(_m3u, getBaseUrl(url), onParseDone);
+                parse(httpResponse.body, getBaseUrl(url), onParseDone);
             });
         }
         return item;
@@ -259,8 +257,7 @@ function test(){
     };
 
     load(url, function (httpResponse){
-        var m3u = arrayBufferToString(httpResponse.body);
-        parse(m3u, baseUrl, onParseDone);
+        parse(httpResponse.body, baseUrl, onParseDone);
     });
 }
 

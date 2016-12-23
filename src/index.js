@@ -104,7 +104,7 @@ function play(videoDOM, url, codecs){
     var endOfStream = false;
 
     videoDOM.src = window.URL.createObjectURL(mediaSource);
-    var fetch_options = null;
+    var fetch_options = {"responseType": "arraybuffer"};
 
     var onFetchDone = function (httpResponse){
         endOfStream = true;
@@ -151,7 +151,8 @@ function play_with_range_request(videoDOM, url, codecs){
 
     var fetch_options = {
         "range": [bufferSize, chunkSize-1],
-        "timeout": 10
+        "timeout": 10,
+        "responseType": "arraybuffer"
     };
 
     var onFetchDone = function (httpResponse){
@@ -320,7 +321,7 @@ function play_with_fragments(videoDOM, playlist, codecs){
                 } else if ( state === 'FAILURE' || state === 'REVOKED' ) {
                     console.warn("fetch video file fail.");
                 }
-            }, null);
+            }, {"responseType": "arraybuffer"});
     };
     download_fragment();
 }
@@ -354,8 +355,7 @@ function test_paly_hls(){
         play_with_fragments(window.videoDOM, playlist, 'video/mp4;codecs="avc1.42E01E,mp4a.40.2');
     };
     PlayList.m3u.load(url, function (httpResponse){
-        var m3u = PlayList.m3u.arrayBufferToString(httpResponse.body);
-        PlayList.m3u.parse(m3u, baseUrl, onParseDone);
+        PlayList.m3u.parse(httpResponse.body, baseUrl, onParseDone);
     });
 }
 
