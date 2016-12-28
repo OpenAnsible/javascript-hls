@@ -38,6 +38,7 @@ function mozGetVideoPlaybackQuality(VideoElement){
         throw new Error("oops...");
     }
 }
+
 function webkitGetVideoPlaybackQuality(VideoElement){
     /**
     Chrome:

@@ -1,5 +1,5 @@
 
-const CHUNK_SIZE = 10*1024; // 10 KB
+const CHUNK_SIZE = 200*1024; // 10 KB
 const TIME_OUT = 30*1000;   // 30s
 
 const STATE = {
@@ -12,8 +12,8 @@ const STATE = {
 };
 
 const RESPONSE_TYPE = {
-    arraybuffer: "arraybuffer"
-    text       : "text",
+    arraybuffer: "arraybuffer",
+    text       : "text"
 };
 
 /**
@@ -109,7 +109,7 @@ function Event(state, result) {
         "method": "GET",
         "url"   : "",
         "body"  : ""
-    },
+    };
     // this.xhr = xhr;
 }
 

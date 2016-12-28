@@ -51,6 +51,13 @@ PlayList:
 
 import PlayList from './playlist/index.js';
 import Http from './net/http.js';
+// import muxjs from 'mux.js';
+// import MP4 from './mp4.js';
+
+// window.MP4 = MP4;
+// window.muxjs = muxjs;
+
+
 
 const SupportCodecs = [
     // MPEG-4 , MPEG-TS , MPEG-H (HEVC) , 
@@ -145,7 +152,7 @@ function play_with_range_request(videoDOM, url, codecs){
     var endOfStream = false;
 
     videoDOM.src = window.URL.createObjectURL(mediaSource);
-    var chunkSize = 1024; // 1 K Byte
+    var chunkSize = 1024*200; // 1 K Byte
     var bufferSize = 0;
     var totalSize = 0;
 
@@ -224,38 +231,6 @@ function play_with_range_request(videoDOM, url, codecs){
     }, false);
 }
 
-function test_single_media (){
-    window.MediaSource = window.MediaSource || window.WebKitMediaSource;
-    if (!!!window.MediaSource) {
-        window.alert('MediaSource API is not available');
-        return false;
-    }
-
-    var videos = [
-        {
-            "url" : "/assets/video/test.mp4",
-            "mime_type": "video/mp4",
-            "codecs": 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"'
-        },
-        {
-            "url" : "/assets/video/test.webm",
-            "mime_type": "video/webm",
-            "codecs": 'video/webm;codecs="vp8,vorbis"'
-        },
-    ];
-    videos.forEach(function (video, i){
-        if ( SupportCodecs.indexOf(video.codecs) === -1 ) {
-            console.warn(video);
-            console.warn("Video Codec(#CODEC#) not support.".replace("#CODEC#", video.codecs));
-        } else {
-            var videoDOM = window.document.getElementById(video.mime_type);
-            console.info("play "+video.url);
-            play_with_range_request(videoDOM, video.url, video.codecs);
-        }
-    });
-}
-
-
 function play_with_fragments(videoDOM, playlist, codecs){
 
     var segments = playlist.segments;
@@ -293,7 +268,10 @@ function play_with_fragments(videoDOM, playlist, codecs){
     var tryPlay = function (){
         console.log("try play ... ");
         let mediaSource = new MediaSource();
-        mediaSource.onsourceopen = onsourceopen.bind(mediaSource);
+        // mediaSource.onsourceopen = onsourceopen.bind(mediaSource);
+        mediaSource.addEventListener('sourceopen', onsourceopen, false);
+        mediaSource.addEventListener('webkitsourceopen', onsourceopen, false);
+
         videoDOM.src = window.URL.createObjectURL(mediaSource);
         // chunks
     };
@@ -310,6 +288,9 @@ function play_with_fragments(videoDOM, playlist, codecs){
         console.log("download fragment: ", idx);
         Http.fetch(segments[idx]["url"], function (state, data){
                 if ( state === 'SUCCESS' ){
+                    // let parsed = window.muxjs.mp4.tools.inspect(data.body);
+                    // console.log(window.muxjs.mp4.tools.textify(parsed));
+
                     chunks.push(data.body);
                     if ( idx < playlist.segments.length-1 ) {
                         idx += 1;
@@ -326,19 +307,132 @@ function play_with_fragments(videoDOM, playlist, codecs){
     download_fragment();
 }
 
+function test_single_media (){
+    window.MediaSource = window.MediaSource || window.WebKitMediaSource;
+    if (!!!window.MediaSource) {
+        window.alert('MediaSource API is not available');
+        return false;
+    }
+
+    var videos = [
+        {
+            "url" : "/assets/video/test.mp4",
+            "mime_type": "video/mp4",
+            "codecs": 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"'
+        },
+        {
+            "url" : "/assets/video/test.webm",
+            "mime_type": "video/webm",
+            "codecs": 'video/webm;codecs="vp8,vorbis"'
+        },
+    ];
+    videos.forEach(function (video, i){
+        if ( SupportCodecs.indexOf(video.codecs) === -1 ) {
+            console.warn(video);
+            console.warn("Video Codec(#CODEC#) not support.".replace("#CODEC#", video.codecs));
+        } else {
+            var videoDOM = window.document.getElementById(video.mime_type);
+            console.info("play "+video.url);
+            play_with_range_request(videoDOM, video.url, video.codecs);
+        }
+    });
+}
+
+function play_with_fragments2(videoDOM, playlist, codecs){
+    var segments = playlist.segments;
+    var chunks   = []; // Vec<Uint8Buffer>
+    var idx = 0;
+    var endOfStream = false;
+
+    videoDOM.onended = function (){
+        console.info("video onended");
+    };
+
+    var mediaSource = new MediaSource();
+    var sourceBuffer = null;
+    
+    videoDOM.src = window.URL.createObjectURL(mediaSource);
+
+    var onupdateend = function (){
+        if ( idx === playlist.segments.length-1 
+            && mediaSource.readyState === 'open'
+            && endOfStream ) {
+            console.info("sourceBuffer onupdateend, mediaSource readyState: ", mediaSource.readyState);
+            try{
+                mediaSource.endOfStream();
+            }catch(e){
+                console.warn(e);
+            }
+        } else {
+            console.info("download next fragment: ", idx);
+            download_fragment();
+        }
+        if ( videoDOM.paused ){
+            videoDOM.play();
+        }
+    };
+    var onsourceopen = function (){
+        console.info("mediaSource onsourceopen, readyState: ", mediaSource.readyState);
+        sourceBuffer = mediaSource.addSourceBuffer(codecs);
+        sourceBuffer.mode = 'segments'; // segments , sequence
+
+        sourceBuffer.addEventListener('updateend', onupdateend, false);
+        download_fragment();
+    };
+    mediaSource.addEventListener('sourceopen', onsourceopen, false);
+    mediaSource.addEventListener('webkitsourceopen', onsourceopen, false);
+    // mediaSource.onsourceopen = onsourceopen;
+
+    var download_fragment = function (){
+        Http.fetch(segments[idx]["url"], function (state, data){
+                if ( state === 'SUCCESS' ){
+                    //  mediaSource.readyState, sourceBuffer.updating
+                    console.info("sourceBuffer appendBuffer ...");
+                    sourceBuffer.appendBuffer(data.body);
+                    // try{
+                        
+                    // }catch(e){
+                    //     console.warn("sourceBuffer appendBuffer error.");
+                    //     console.log(e.name, sourceBuffer.updating);
+                    //     console.warn(e);
+                    //     // setTimeout(function (){
+                    //     //     sourceBuffer.appendBuffer(data.body);
+                    //     // }, 1000);
+                    // }
+                    if ( idx < playlist.segments.length-1 ) {
+                        idx += 1;
+                    } else {
+                        console.info("segments fetch done.");
+                        endOfStream = true;
+                    }
+                } else if ( state === 'FAILURE' || state === 'REVOKED' ) {
+                    console.warn("fetch video file fail.");
+                }
+            }, {"responseType": "arraybuffer"});
+    };
+}
+
 function test_fragments(){
     var playlist = {
         "segments": [
-            {"url": "/assets/video/test.mp4"},
-            {"url": "/assets/video/out001_f.mp4"},
-            {"url": "/assets/video/out002_f.mp4"},
+            {"url": "/output/output-seginit.mp4"},
+            {"url": "/output/output-seg1.m4s"},
+            {"url": "/output/output-seg2.m4s"},
+            {"url": "/output/output-seg3.m4s"},
+            {"url": "/output/output-seg4.m4s"},
+            {"url": "/output/output-seg5.m4s"},
+            {"url": "/output/output-seg6.m4s"},
+            {"url": "/output/output-seg7.m4s"},
+
+            // {"url": "/assets/video/out001_f.mp4"},
+            // {"url": "/assets/video/out002_f.mp4"},
         ]
     };
     var codecs = 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"';
     window.codecs = codecs;
 
     window.videoDOM = window.document.getElementById("video/m3u8");
-    play_with_fragments(window.videoDOM, playlist, codecs);
+    play_with_fragments2(window.videoDOM, playlist, codecs);
 }
 
 function test_paly_hls(){
@@ -358,15 +452,16 @@ function test_paly_hls(){
         PlayList.m3u.parse(httpResponse.body, baseUrl, onParseDone);
     });
 }
-
+// https://developer.mozilla.org/en-US/Apps/Fundamentals/Audio_and_video_delivery/buffering_seeking_time_ranges
 function test(){
-    test_single_media();
+    // test_single_media();
     test_fragments();
 }
 
 // window.PlayList = PlayList;
 // window.play = play;
 // window.main = main;
+window.test = test;
 
 window.onload = test;
 
