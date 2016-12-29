@@ -340,7 +340,6 @@ function test_single_media (){
 
 function play_with_fragments2(videoDOM, playlist, codecs){
     var segments = playlist.segments;
-    var chunks   = []; // Vec<Uint8Buffer>
     var idx = 0;
     var endOfStream = false;
 
@@ -350,20 +349,18 @@ function play_with_fragments2(videoDOM, playlist, codecs){
 
     var mediaSource = new MediaSource();
     var sourceBuffer = null;
-    
     videoDOM.src = window.URL.createObjectURL(mediaSource);
 
     var onupdateend = function (){
         if ( idx === playlist.segments.length-1 
             && mediaSource.readyState === 'open'
             && endOfStream ) {
-            console.info("sourceBuffer onupdateend, mediaSource readyState: ", mediaSource.readyState);
-            try{
+                console.info("sourceBuffer onupdateend, mediaSource readyState: ", mediaSource.readyState);
                 mediaSource.endOfStream();
-            }catch(e){
-                console.warn(e);
-            }
         } else {
+            if ( sourceBuffer.buffered.length > 0 && videoDOM.currentTime === 0 ) {
+                videoDOM.currentTime = sourceBuffer.buffered.start(0);
+            }
             console.info("download next fragment: ", idx);
             download_fragment();
         }
@@ -375,30 +372,17 @@ function play_with_fragments2(videoDOM, playlist, codecs){
         console.info("mediaSource onsourceopen, readyState: ", mediaSource.readyState);
         sourceBuffer = mediaSource.addSourceBuffer(codecs);
         sourceBuffer.mode = 'segments'; // segments , sequence
-
         sourceBuffer.addEventListener('updateend', onupdateend, false);
         download_fragment();
     };
     mediaSource.addEventListener('sourceopen', onsourceopen, false);
     mediaSource.addEventListener('webkitsourceopen', onsourceopen, false);
-    // mediaSource.onsourceopen = onsourceopen;
-
+    
     var download_fragment = function (){
         Http.fetch(segments[idx]["url"], function (state, data){
                 if ( state === 'SUCCESS' ){
                     //  mediaSource.readyState, sourceBuffer.updating
-                    console.info("sourceBuffer appendBuffer ...");
                     sourceBuffer.appendBuffer(data.body);
-                    // try{
-                        
-                    // }catch(e){
-                    //     console.warn("sourceBuffer appendBuffer error.");
-                    //     console.log(e.name, sourceBuffer.updating);
-                    //     console.warn(e);
-                    //     // setTimeout(function (){
-                    //     //     sourceBuffer.appendBuffer(data.body);
-                    //     // }, 1000);
-                    // }
                     if ( idx < playlist.segments.length-1 ) {
                         idx += 1;
                     } else {
@@ -413,24 +397,30 @@ function play_with_fragments2(videoDOM, playlist, codecs){
 }
 
 function test_fragments(){
+    var base = 589;
     var playlist = {
         "segments": [
-            {"url": "/output/output-seginit.mp4"},
-            {"url": "/output/output-seg1.m4s"},
-            {"url": "/output/output-seg2.m4s"},
-            {"url": "/output/output-seg3.m4s"},
-            {"url": "/output/output-seg4.m4s"},
-            {"url": "/output/output-seg5.m4s"},
-            {"url": "/output/output-seg6.m4s"},
-            {"url": "/output/output-seg7.m4s"},
+            // TEST VOD
+            // {"url": "/output/output-seginit.mp4"},
+            // {"url": "/output/output-seg1.m4s"},
+            // {"url": "/output/output-seg2.m4s"},
+            // {"url": "/output/output-seg3.m4s"},
+            // {"url": "/output/output-seg4.m4s"},
+            // {"url": "/output/output-seg5.m4s"},
+            // {"url": "/output/output-seg6.m4s"},
+            // {"url": "/output/output-seg7.m4s"},
 
-            // {"url": "/assets/video/out001_f.mp4"},
-            // {"url": "/assets/video/out002_f.mp4"},
+            // TEST LIVE
+            {"url": "/output/dash/segment-init.mp4"},
+            
         ]
+        .concat([...Array(60).keys()].map(function (n){
+            return {"url": "/output/dash/segment-"+(base+n)+".m4s"};
+        }))
     };
     var codecs = 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"';
     window.codecs = codecs;
-
+    
     window.videoDOM = window.document.getElementById("video/m3u8");
     play_with_fragments2(window.videoDOM, playlist, codecs);
 }
@@ -452,7 +442,10 @@ function test_paly_hls(){
         PlayList.m3u.parse(httpResponse.body, baseUrl, onParseDone);
     });
 }
+
 // https://developer.mozilla.org/en-US/Apps/Fundamentals/Audio_and_video_delivery/buffering_seeking_time_ranges
+// http://dash-mse-test.appspot.com/media.html
+// https://developer.mozilla.org/en-US/docs/Web/HTML/DASH_Adaptive_Streaming_for_HTML_5_Video
 function test(){
     // test_single_media();
     test_fragments();
